@@ -1,10 +1,11 @@
-from agents import function_tool
+from agents import function_tool, RunContextWrapper
 import requests
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from typing import Optional, List
-import asyncio
 import json
+
+from context import UserContext
 
 # -- Weather tool --
 
@@ -45,7 +46,7 @@ async def get_weather_forecast(city: str, date: str) -> str:
     
     
 @function_tool
-def search_flights(origin: str, destination: str, date: str) -> str:
+def search_flights(wrapper: RunContextWrapper[UserContext], origin: str, destination: str, date: str) -> str:
     """Search for flights from origin to destination on a specific date."""
     # In a real implementation, this would call a flight API
     # for now using mock data
@@ -74,10 +75,21 @@ def search_flights(origin: str, destination: str, date: str) -> str:
         }
     ]
     
+    # apply user preferences if available
+    if wrapper and wrapper.context:
+        preferred_airlines = wrapper.context.preferred_airlines
+        if preferred_airlines:
+            # Move the preferred airlines to the top of the list
+            flight_options.sort(key= lambda x: x["airline"] not in preferred_airlines)
+
+            for flight in flight_options:
+                if flight["airline"] in preferred_airlines:
+                    flight["preferred"] = True
+    
     return json.dumps(flight_options)    
 
 @function_tool
-def search_hotels(city: str, check_in: str, check_out:str, max_price: Optional[float] = None) -> str:
+def search_hotels(wrapper: RunContextWrapper[UserContext], city: str, check_in: str, check_out:str, max_price: Optional[float] = None) -> str:
     """Search for hotels in a city for specific dates within a price range."""
     # In a real implementation, this would call a hotel search API
     hotel_options = [
@@ -106,5 +118,27 @@ def search_hotels(city: str, check_in: str, check_out:str, max_price: Optional[f
         filtered_hotels = [hotel for hotel in hotel_options if hotel["price_per_night"] <= max_price]
     else: 
         filtered_hotels = hotel_options
+        
+    if wrapper and wrapper.context:
+        preferred_amenities = wrapper.context.hotel_amenities
+        budget_level = wrapper.context.budget_level
+        
+        # Sort hotels by preference match
+        if preferred_amenities:
+            # Calculate a score based on how many preferred amenities each hotel has
+            for hotel in filtered_hotels:
+                matching_amenities = [a for a in preferred_amenities if a in hotel["amenities"]]
+                hotel["matching_amenities"] = matching_amenities    # add a new key to the hotel dict
+                hotel["preference_score"] = len(matching_amenities)
+                
+        # sort by preference score
+        filtered_hotels.sort(key = lambda x: x["preference_score"], reverse=True)
+        
+        # Apply budget filter if available
+        if budget_level:
+            if budget_level == "budget":
+                filtered_hotels.sort(key = lambda x: x["price_per_night"])
+            elif budget_level == "luxury":
+                filtered_hotels.sort(key = lambda x: x["price_per_night"], reverse=True)
     
     return json.dumps(filtered_hotels)
