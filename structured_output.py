@@ -3,7 +3,6 @@ from typing import List
 from pydantic import BaseModel, Field
 from agents import Agent, Runner
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
 from tools import get_weather_forecast
 import os
 

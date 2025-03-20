@@ -3,7 +3,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 from agents import Agent, RunContextWrapper, Runner, function_tool, ModelSettings, InputGuardrail, GuardrailFunctionOutput, InputGuardrailTripwireTriggered
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
+
 
 import logfire
 
