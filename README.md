@@ -4,6 +4,12 @@ Welcome to the **Agentic Travel Assistant**! This comprehensive tool helps users
 
 ---
 
+## User Interface:
+
+![Travel Planner UI](https://github.com/Hetav01/Agentic-Travel-Assistant/blob/main/travel-ui.png)
+
+---
+
 ## 🌟 Key Features
 
 - **🛫 Flight Recommendations:** Personalized options based on price, timing, and flight preferences (direct or connecting).
